@@ -19,6 +19,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+#define _EDK2
 #ifdef _WINDOWS
 #include "wincompat.h"
 #endif
@@ -588,6 +589,7 @@ int ptls_buffer_reserve_aligned(ptls_buffer_t *buf, size_t delta, uint8_t align_
         while (new_capacity < buf->off + delta) {
             new_capacity *= 2;
         }
+#ifndef _EDK2
         if (align_bits != 0) {
 #ifdef _WINDOWS
             if ((newp = _aligned_malloc(new_capacity, (size_t)1 << align_bits)) == NULL)
@@ -595,6 +597,9 @@ int ptls_buffer_reserve_aligned(ptls_buffer_t *buf, size_t delta, uint8_t align_
 #else
             if (posix_memalign(&newp, 1 << align_bits, new_capacity) != 0)
                 return PTLS_ERROR_NO_MEMORY;
+#endif
+#else
+        if (0) {
 #endif
         } else {
             if ((newp = malloc(new_capacity)) == NULL)
@@ -4383,13 +4388,31 @@ static int server_handle_hello(ptls_t *tls, ptls_message_emitter_t *emitter, ptl
 
             /* use cookie to check the integrity of the handshake, and update the context */
             size_t sigsize = tls->ctx->cipher_suites[0]->hash->digest_size;
+#ifdef HAVE_ALLOCA
             uint8_t *sig = alloca(sigsize);
-            if ((ret = calc_cookie_signature(tls, properties, key_share.algorithm, ch->cookie.tbs, sig)) != 0)
+#else
+            uint8_t *sig = malloc(sigsize);
+            if (sig == NULL) {
+                ret = PTLS_ERROR_NO_MEMORY;
                 goto Exit;
+            }
+#endif
+            if ((ret = calc_cookie_signature(tls, properties, key_share.algorithm, ch->cookie.tbs, sig)) != 0) {
+#ifndef HAVE_ALLOCA
+                free(sig);
+#endif
+                goto Exit;
+            }
             if (!(ch->cookie.signature.len == sigsize && ptls_mem_equal(ch->cookie.signature.base, sig, sigsize))) {
+#ifndef HAVE_ALLOCA
+                free(sig);
+#endif
                 ret = PTLS_ALERT_HANDSHAKE_FAILURE;
                 goto Exit;
             }
+#ifndef HAVE_ALLOCA
+            free(sig);
+#endif
             /* integrity check passed; update states */
             key_schedule_update_ch1hash_prefix(tls->key_schedule);
             ptls__key_schedule_update_hash(tls->key_schedule, ch->cookie.ch1_hash.base, ch->cookie.ch1_hash.len, 0);
