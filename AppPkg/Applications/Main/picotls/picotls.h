@@ -60,8 +60,10 @@ extern "C" {
 
 #define PTLS_ELEMENTSOF(x) (PTLS_ASSERT_IS_ARRAY_EXPR(x) * sizeof(x) / sizeof((x)[0]))
 
-#ifdef _WINDOWS
+#if defined(_WINDOWS)
 #define PTLS_THREADLOCAL __declspec(thread)
+#elif defined(_EDK2)
+#define PTLS_THREADLOCAL
 #else
 #define PTLS_THREADLOCAL __thread
 #define PTLS_HAVE_LOG 0

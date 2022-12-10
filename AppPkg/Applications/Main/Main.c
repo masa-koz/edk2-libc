@@ -10,7 +10,19 @@
 //#include  <Library/ShellCEntryLib.h>
 
 #include  <stdio.h>
+#include "picotls.h"
+#include "picotls/minicrypto.h"
 
+#include <Uefi.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <netinet/in.h>
+
+#include <sys/EfiSysCall.h>
+#include <sys/endian.h>
+#include <sys/socket.h>
 /***
   Demonstrates basic workings of the main() function by displaying a
   welcoming message.
@@ -34,6 +46,19 @@ main (
 
   puts("Hello there fellow Programmer.");
   puts("Welcome to the world of EDK II.");
+
+  ptls_key_exchange_algorithm_t *client_keyex[] = {&ptls_minicrypto_x25519, NULL};
+  ptls_context_t client_ctx = {ptls_minicrypto_random_bytes, &ptls_get_time, client_keyex, ptls_minicrypto_cipher_suites};
+  ptls_t *client = NULL;
+  ptls_buffer_t cbuf;
+  uint8_t cbuf_small[16384];
+  int ret;
+
+  client = ptls_new(&client_ctx, 0);
+  ptls_buffer_init(&cbuf, cbuf_small, sizeof(cbuf_small));
+
+  ret = ptls_handshake(client, &cbuf, NULL, NULL, NULL);
+  assert(ret == PTLS_ERROR_IN_PROGRESS);
 
   return 0;
 }
