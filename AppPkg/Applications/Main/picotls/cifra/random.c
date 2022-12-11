@@ -94,12 +94,12 @@ static void read_entropy(uint8_t *entropy, size_t size)
 
     Status = gBS->LocateProtocol(&gEfiRngProtocolGuid, NULL, (VOID **)&RngProtocol);
     if (EFI_ERROR(Status) || RngProtocol == NULL) {
-        perror("ptls_minicrypto_random_bytes: could not locate EFI_RNG_PROTOCOL");
+        printf("ptls_minicrypto_random_bytes: could not locate EFI_RNG_PROTOCOL\r\n");
         abort();
     }
     Status = RngProtocol->GetRNG(RngProtocol, NULL, size, entropy);
-    if (!EFI_ERROR(Status)) {
-        perror("ptls_minicrypto_random_bytes: failed to call GetRNG");
+    if (EFI_ERROR(Status)) {
+        printf("ptls_minicrypto_random_bytes: failed to call GetRNG\r\n");
         abort();
     }
 }

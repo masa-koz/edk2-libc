@@ -13,6 +13,7 @@
   MODULE_TYPE                    = UEFI_APPLICATION
   VERSION_STRING                 = 0.1
   ENTRY_POINT                    = ShellCEntryLib
+  #ENTRY_POINT                    = UefiMain
 
 #
 #  VALID_ARCHITECTURES           = IA32 X64
